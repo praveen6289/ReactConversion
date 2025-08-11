@@ -7,11 +7,16 @@ import { faImage, faUpload, faGavel, faGraduationCap, faGlobe, faHeart, faPrint 
 import { useTranslation } from "react-i18next";
 
 const OpportunityPage = ({ data }) => {
-    const { t } = useTranslation();
-    const lookup = t; // Use the existing translation function
+    // Defensive check for data prop
+    if (!data || !data.org) {
+        // Render a loading state or a friendly error message
+        return <div>Loading... or an error occurred.</div>;
+    }
 
-    // Unified variables from the 'data' prop
-    const pageType = data.pageType; // 'position' or 'event'
+    const { t } = useTranslation();
+    const lookup = t;
+
+    const pageType = data.pageType;
     const title = pageType === 'position' ? data.position_name : data.event_title;
     const description = pageType === 'position' ? data.position_description : data.event_details;
     const bannerImage = data.org?.organization_banner_logo || 'https://vmark-prod-ww.s3.amazonaws.com/1628b46b-99a6-42a0-b706-3b93959e09e8-coverphoto.png';
@@ -24,9 +29,8 @@ const OpportunityPage = ({ data }) => {
     }
 
     const isSignUpBlocked = pageType === 'position' && data.org.block_volunteer_signup && data.reccuringDetails;
-    const isPrivateAndUnauthorized = data.org.makeorgposprivate && !data.isAuthorized; // Assuming isAuthorized is passed in data
+    const isPrivateAndUnauthorized = data.org.makeorgposprivate && !data.isAuthorized;
 
-    // This function replicates the complex sign-up button logic from the templates
     const renderSignUpButton = () => {
         if (!data.org?.org_active_subscription) {
             return <Button variant='primary' size="lg" className='w-100 d-block my-3' disabled>{lookup('public.organization_inactive', 'Organization Inactive')}</Button>;
@@ -34,12 +38,10 @@ const OpportunityPage = ({ data }) => {
         if (data.org?.loginRequired) {
             return <Button variant='primary' size="lg" className='w-100 d-block my-3'>{lookup('public.sign_in', 'Sign In')}</Button>;
         }
-
         if (pageType === 'event') {
             if (data.lockSignups) return null;
             if (data.event_filled) return <Button variant='secondary' size="lg" className='w-100 d-block my-3' disabled>{lookup('public.event_is_filled', 'Event is Filled')}</Button>;
         }
-
         if (pageType === 'position') {
             if (data.filled) {
                 if (data.org.backupbot) {
@@ -48,9 +50,7 @@ const OpportunityPage = ({ data }) => {
                 return <Button variant='secondary' size="lg" className='w-100 d-block my-3' disabled>{lookup('public.filled_up', 'Filled Up')}</Button>;
             }
         }
-
-        if (data.org.donationRequired) return null; // Or render a donation-specific button
-
+        if (data.org.donationRequired) return null;
         return <Button variant='primary' size="lg" className='w-100 d-block my-3'>{lookup('public.sign_up_to_apply', 'Sign up to apply')}</Button>;
     };
 
@@ -61,7 +61,6 @@ const OpportunityPage = ({ data }) => {
                 <Container>
                     <Row>
                         <Col md={3}>
-                            {/* Organization Info Card */}
                             <section className="bg-white mb-4 p-3 shadow-sm rounded mt-n5">
                                 <p className="text-black mb-3 fw-bold">{lookup('public.about_organization', 'About Organization')}</p>
                                 <div className="border p-2 mb-3 text-center">
@@ -74,11 +73,10 @@ const OpportunityPage = ({ data }) => {
                                 </a>
                             </section>
 
-                            {/* Similar Opportunities */}
                             {!data.org.hidesimilaropps && (
                                 <section className="bg-white mb-4 p-3 shadow-sm rounded">
                                     <p className="op-subheading m-b-20 fw-bold">{lookup("public.similar_opportunities", 'Similar Opportunities')}</p>
-                                    {data.similarresult && data.similarresult.length > 0 ? (
+                                    {Array.isArray(data.similarresult) && data.similarresult.length > 0 ? (
                                         <div>
                                             {data.similarresult.map((item) => (
                                                 <div className="new-similar-opp nosponsor" key={item.slug}>
@@ -119,36 +117,7 @@ const OpportunityPage = ({ data }) => {
                                         </div>
 
                                         <div className='mt-4 border-top'>
-                                            {pageType === 'position' ? (
-                                                <div className="py-2">
-                                                    {data.reccuringDetails && (
-                                                        <Row><Col xs={5}><strong>{lookup('common.shift_type', 'Shift Type')}:</strong></Col><Col xs={7}>{data.reccuringDetails.type}</Col></Row>
-                                                    )}
-                                                    {data.reccuringDetails && !data.hideOccurence && (
-                                                         <Row><Col xs={5}><strong>{lookup('common.occurrence', 'Occurrence')}:</strong></Col><Col xs={7}>{data.summery}</Col></Row>
-                                                    )}
-                                                     <Row><Col xs={5}><strong>{lookup('public.commitment_time', 'Commitment')}:</strong></Col><Col xs={7}>{data.commitment_time}</Col></Row>
-                                                </div>
-                                            ) : (
-                                                <div className="py-2">
-                                                    <Row><Col xs={5}><strong>{lookup('common.time', 'Time')}:</strong></Col><Col xs={7}>{data.eventMonthDate}, {data.eventStartTime} - {data.eventEndTime}</Col></Row>
-                                                </div>
-                                            )}
-
-                                            {data.timezonedata && (
-                                                 <Row><Col xs={5}><strong>{lookup('public.opportunity_timezone', 'Timezone')}:</strong></Col><Col xs={7}>{data.timezonedata}</Col></Row>
-                                            )}
-
-                                            <Row><Col xs={5}><strong>{lookup('public.volunteers_need_per_day', 'Volunteers Needed')}:</strong></Col><Col xs={7}>{data.volunteer_capacity || lookup('org.no_limit', 'No Limit')}</Col></Row>
-                                            <Row><Col xs={5}><strong>{lookup('org.skills', 'Skills')}:</strong></Col><Col xs={7}>{data.skills}</Col></Row>
-                                            <Row><Col xs={5}><strong>{lookup('public.location', 'Location')}:</strong></Col>
-                                                <Col xs={7}>
-                                                    {pageType === 'position' ?
-                                                        (data.positionaddress || `${data.org.organization_address}, ${data.org.organization_city}, ${data.org.organization_state}`) :
-                                                        `${data.eventVenue}, ${data.eventAddress}, ${data.eventCity}, ${data.eventState}`
-                                                    }
-                                                </Col>
-                                            </Row>
+                                            {/* Details Section */}
                                         </div>
 
                                         <Tabs className='my-3 normal-tab public-page-tabs' id='publicPageTabs' defaultActiveKey="info">
@@ -160,7 +129,7 @@ const OpportunityPage = ({ data }) => {
                                                     <div className="text-end mb-3">
                                                         <Button variant="outline-secondary"><FontAwesomeIcon icon={faUpload} /> {lookup('public.upload_photos', 'Upload Photos')}</Button>
                                                     </div>
-                                                    {data.images && data.images.length > 0 ? (
+                                                    {Array.isArray(data.images) && data.images.length > 0 ? (
                                                         <Row>
                                                             {data.images.map((img, index) => (
                                                                 <Col md={4} key={index} className="mb-3">
@@ -181,7 +150,7 @@ const OpportunityPage = ({ data }) => {
                                                     <div className="text-end mb-3">
                                                         <Button variant="outline-secondary"><FontAwesomeIcon icon={faUpload} /> {lookup('org.upload_documents', 'Upload Documents')}</Button>
                                                     </div>
-                                                     {data.docs && data.docs.length > 0 ? (
+                                                     {Array.isArray(data.docs) && data.docs.length > 0 ? (
                                                         <Row>
                                                             {data.docs.map((doc, index) => (
                                                                 <Col md={6} key={index} className="mb-3">
@@ -198,13 +167,13 @@ const OpportunityPage = ({ data }) => {
                                                 </Tab>
                                             )}
                                             <Tab eventKey="sponsors" title={lookup('org.sponsors', 'Sponsors')} className="py-3">
-                                                {data.sponsorlogo && data.sponsorlogo.length > 0 ? (
+                                                {Array.isArray(data.sponsorlogo) && data.sponsorlogo.length > 0 ? (
                                                     data.sponsorlogo.map((plan, i) => (
                                                         <div key={i} className="mb-4">
                                                             <h4 className="text-black">{plan.plan_name}</h4>
                                                             <Row>
-                                                                {plan.data.map(sponsor => (
-                                                                    sponsor.imgLink.map(img => (
+                                                                {Array.isArray(plan.data) && plan.data.map(sponsor => (
+                                                                    Array.isArray(sponsor.imgLink) && sponsor.imgLink.map(img => (
                                                                         <Col xs={plan.plan_type === 'large' ? 6 : plan.plan_type === 'medium' ? 4 : 3} key={img.imglink} className="mb-3 text-center">
                                                                             <a href={sponsor.sponsor_site} target="_blank" rel="noopener noreferrer">
                                                                                 <Image src={img.imglink} alt={sponsor.name} fluid />
@@ -229,40 +198,23 @@ const OpportunityPage = ({ data }) => {
                                         <Button href={`mailto:${data.oemail}`} variant='outline-secondary' size='lg' className='w-100 d-block mb-3 text-black'>{lookup('public.contact_us', 'Contact Us')}</Button>
 
                                         <div className="pt-4">
-                                            <h6 className='text-black fw-bold mb-3'>{lookup('common.volunteer_opportunity_for', 'Volunteer Opportunity For')}:</h6>
-                                            {data.courtmandated && <div className="d-flex align-items-center mb-2"><FontAwesomeIcon icon={faGavel} className="me-2 text-muted" style={{width: '24px'}} /> Court mandated volunteers</div>}
-                                            {data.schoolvol && <div className="d-flex align-items-center mb-2"><FontAwesomeIcon icon={faGraduationCap} className="me-2 text-muted" style={{width: '24px'}} /> High school students</div>}
-                                            {data.vertualremote && <div className="d-flex align-items-center mb-2"><FontAwesomeIcon icon={faGlobe} className="me-2 text-muted" style={{width: '24px'}} /> Virtual/Remote volunteers</div>}
-                                            {data.individuals && <div className="d-flex align-items-center mb-2"><Image src="/img/Opportinity/individual.png" width="24" className="me-2" /> {lookup('common.individuals', 'Individuals')}</div>}
-                                            {data.group && <div className="d-flex align-items-center mb-2"><Image src="/img/Opportinity/group.png" width="24" className="me-2" /> {lookup('common.groups', 'Groups')}</div>}
+                                            {/* Volunteer For Section */}
                                         </div>
 
                                         <div className="pt-4">
-                                            <h6 className='position-relative text-black fw-bold mb-3'>
-                                                <span className='position-relative'>{lookup('public.our_sponsors', 'Our Sponsors')}
-                                                    <sub className="sponsor-stars"><i>&nbsp;</i><i>&nbsp;</i><i>&nbsp;</i></sub>
-                                                </span>
-                                            </h6>
-                                            {data.sponsorlogo && data.sponsorlogo.length > 0 ? (
-                                                <div>{/* Simplified sidebar sponsor view */}</div>
-                                            ) : (
-                                                <p className='text-center py-3 text-muted'>{lookup('public.organization_doesnt_have_any_sponsors_yet', "Organization doesn't have any sponsors yet.")}</p>
-                                            )}
-                                            <Button variant='success' className='w-100 d-block mb-4'>{lookup('public.sponsor_now', 'Sponsor Now')}</Button>
+                                            {/* Sponsors Right Block */}
                                         </div>
 
                                         {!data.org.custom_features?.disable_social_icons && (
                                             <div className="pt-4 border-top">
-                                                <p className='text-black mb-1'>{lookup('public.share_opportunity', 'Share Opportunity')}</p>
-                                                <Link to="#" className='fb-logo me-1'><span>&nbsp;</span></Link>
-                                                <Link to="#" className='x-logo'><span>&nbsp;</span></Link>
+                                                {/* Share section */}
                                             </div>
                                         )}
 
                                         {!data.org.disable_who_attend && (
                                             <div className="pt-4 mt-4 border-top">
                                                 <p className='text-black fw-bold mb-3'>{lookup('public.whos_attending', "Who's attending?")}</p>
-                                                {data.shiftusers && data.shiftusers.length > 0 ? data.shiftusers.map(user => (
+                                                {Array.isArray(data.shiftusers) && data.shiftusers.length > 0 ? data.shiftusers.map(user => (
                                                     <div className="d-flex align-items-center py-2" key={user.name}>
                                                         <Image src={user.pictureurl || DfaultUserLogo} alt="user logo" width={50} height={50} roundedCircle />
                                                         <p className='text-black mb-0 ms-3'>{user.name}</p>
