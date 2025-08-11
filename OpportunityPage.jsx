@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 const OpportunityPage = ({ data }) => {
     // Defensive check for data prop
     if (!data || !data.org) {
-        // Render a loading state or a friendly error message
         return <div>Loading... or an error occurred.</div>;
     }
 
@@ -117,7 +116,36 @@ const OpportunityPage = ({ data }) => {
                                         </div>
 
                                         <div className='mt-4 border-top'>
-                                            {/* Details Section */}
+                                            {pageType === 'position' ? (
+                                                <div className="py-2">
+                                                    {data.reccuringDetails && (
+                                                        <Row><Col xs={5}><strong>{lookup('common.shift_type', 'Shift Type')}:</strong></Col><Col xs={7}>{data.reccuringDetails.type}</Col></Row>
+                                                    )}
+                                                    {data.reccuringDetails && !data.hideOccurence && (
+                                                         <Row><Col xs={5}><strong>{lookup('common.occurrence', 'Occurrence')}:</strong></Col><Col xs={7}>{data.summery}</Col></Row>
+                                                    )}
+                                                     <Row><Col xs={5}><strong>{lookup('public.commitment_time', 'Commitment')}:</strong></Col><Col xs={7}>{data.commitment_time}</Col></Row>
+                                                </div>
+                                            ) : (
+                                                <div className="py-2">
+                                                    <Row><Col xs={5}><strong>{lookup('common.time', 'Time')}:</strong></Col><Col xs={7}>{data.eventMonthDate}, {data.eventStartTime} - {data.eventEndTime}</Col></Row>
+                                                </div>
+                                            )}
+
+                                            {data.timezonedata && (
+                                                 <Row><Col xs={5}><strong>{lookup('public.opportunity_timezone', 'Timezone')}:</strong></Col><Col xs={7}>{data.timezonedata}</Col></Row>
+                                            )}
+
+                                            <Row><Col xs={5}><strong>{lookup('public.volunteers_need_per_day', 'Volunteers Needed')}:</strong></Col><Col xs={7}>{data.volunteer_capacity || lookup('org.no_limit', 'No Limit')}</Col></Row>
+                                            <Row><Col xs={5}><strong>{lookup('org.skills', 'Skills')}:</strong></Col><Col xs={7}>{data.skills}</Col></Row>
+                                            <Row><Col xs={5}><strong>{lookup('public.location', 'Location')}:</strong></Col>
+                                                <Col xs={7}>
+                                                    {pageType === 'position' ?
+                                                        (data.positionaddress || `${data.org.organization_address}, ${data.org.organization_city}, ${data.org.organization_state}`) :
+                                                        `${data.eventVenue}, ${data.eventAddress}, ${data.eventCity}, ${data.eventState}`
+                                                    }
+                                                </Col>
+                                            </Row>
                                         </div>
 
                                         <Tabs className='my-3 normal-tab public-page-tabs' id='publicPageTabs' defaultActiveKey="info">
@@ -198,16 +226,33 @@ const OpportunityPage = ({ data }) => {
                                         <Button href={`mailto:${data.oemail}`} variant='outline-secondary' size='lg' className='w-100 d-block mb-3 text-black'>{lookup('public.contact_us', 'Contact Us')}</Button>
 
                                         <div className="pt-4">
-                                            {/* Volunteer For Section */}
+                                            <h6 className='text-black fw-bold mb-3'>{lookup('common.volunteer_opportunity_for', 'Volunteer Opportunity For')}:</h6>
+                                            {data.courtmandated && <div className="d-flex align-items-center mb-2"><FontAwesomeIcon icon={faGavel} className="me-2 text-muted" style={{width: '24px'}} /> Court mandated volunteers</div>}
+                                            {data.schoolvol && <div className="d-flex align-items-center mb-2"><FontAwesomeIcon icon={faGraduationCap} className="me-2 text-muted" style={{width: '24px'}} /> High school students</div>}
+                                            {data.vertualremote && <div className="d-flex align-items-center mb-2"><FontAwesomeIcon icon={faGlobe} className="me-2 text-muted" style={{width: '24px'}} /> Virtual/Remote volunteers</div>}
+                                            {data.individuals && <div className="d-flex align-items-center mb-2"><Image src="/img/Opportinity/individual.png" width="24" className="me-2" /> {lookup('common.individuals', 'Individuals')}</div>}
+                                            {data.group && <div className="d-flex align-items-center mb-2"><Image src="/img/Opportinity/group.png" width="24" className="me-2" /> {lookup('common.groups', 'Groups')}</div>}
                                         </div>
 
                                         <div className="pt-4">
-                                            {/* Sponsors Right Block */}
+                                            <h6 className='position-relative text-black fw-bold mb-3'>
+                                                <span className='position-relative'>{lookup('public.our_sponsors', 'Our Sponsors')}
+                                                    <sub className="sponsor-stars"><i>&nbsp;</i><i>&nbsp;</i><i>&nbsp;</i></sub>
+                                                </span>
+                                            </h6>
+                                            {Array.isArray(data.sponsorlogo) && data.sponsorlogo.length > 0 ? (
+                                                <div>{/* Simplified sidebar sponsor view */}</div>
+                                            ) : (
+                                                <p className='text-center py-3 text-muted'>{lookup('public.organization_doesnt_have_any_sponsors_yet', "Organization doesn't have any sponsors yet.")}</p>
+                                            )}
+                                            <Button variant='success' className='w-100 d-block mb-4'>{lookup('public.sponsor_now', 'Sponsor Now')}</Button>
                                         </div>
 
                                         {!data.org.custom_features?.disable_social_icons && (
                                             <div className="pt-4 border-top">
-                                                {/* Share section */}
+                                                <p className='text-black mb-1'>{lookup('public.share_opportunity', 'Share Opportunity')}</p>
+                                                <Link to="#" className='fb-logo me-1'><span>&nbsp;</span></Link>
+                                                <Link to="#" className='x-logo'><span>&nbsp;</span></Link>
                                             </div>
                                         )}
 
